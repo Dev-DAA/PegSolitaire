@@ -1,12 +1,10 @@
 #include "Player.h"
 
-Player::Player(const std::string& name,
-               uint16_t score,
-               COMMON::EPlayerType type)
+Player::Player(const std::string& name, uint16_t score, COMMON::EPlayerType type)
 {
   SetName(name);
   SetBeginScore(score);
-  SetEssence(type);
+  SetEntity(type);
 }
 
 Player::~Player() {}
@@ -25,13 +23,11 @@ Player::SetName(const std::string& name)
 }
 
 bool
-Player::SetEssence(const COMMON::EPlayerType type)
+Player::SetEntity(const COMMON::EPlayerType type)
 {
   // Проверка типа
-  if ((type != COMMON::EPlayerType::HUMAN) &&
-      (type != COMMON::EPlayerType::COMPUTER)) {
-    LOG(ERROR)
-      << "Player::SetEssence : Invalid field type value in SetEssence()!";
+  if ((type != COMMON::EPlayerType::HUMAN) && (type != COMMON::EPlayerType::COMPUTER)) {
+    LOG(ERROR) << "Player::SetEssence : Invalid field type value in SetEssence()!";
     return false;
   }
   // Устанавливаем сущность
@@ -71,7 +67,7 @@ Player::GetName() const
 }
 
 COMMON::EPlayerType
-Player::GetEssence() const
+Player::GetEntity() const
 {
   // Возвращаем сущность
   return m_essence;
@@ -87,6 +83,5 @@ Player::GetScore() const
 bool
 operator==(const Player& lhs, const Player& rhs)
 {
-  return lhs.m_name == rhs.m_name && lhs.m_essence == rhs.m_essence &&
-         lhs.m_score == rhs.m_score;
+  return lhs.m_name == rhs.m_name && lhs.m_essence == rhs.m_essence && lhs.m_score == rhs.m_score;
 }

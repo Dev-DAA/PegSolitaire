@@ -22,7 +22,7 @@ public:
   // Метод установки имени
   bool SetName(const std::string& name);
   // Метод установки сущности
-  bool SetEssence(const COMMON::EPlayerType type);
+  bool SetEntity(const COMMON::EPlayerType type);
   // Установить начальный счёт
   bool SetBeginScore(const uint16_t score);
   // Добавить кол-во съеденых фишек
@@ -30,7 +30,7 @@ public:
   // Получить информация Имя
   std::string GetName() const;
   // Получить сущность
-  COMMON::EPlayerType GetEssence() const;
+  COMMON::EPlayerType GetEntity() const;
   // Получить счёт
   uint16_t GetScore() const;
   // Для сравнения векторов

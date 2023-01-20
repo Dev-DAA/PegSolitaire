@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Common.h"
 #include <SFML/Graphics.hpp>
 
 // Размер поля
@@ -61,16 +62,16 @@ AlignToCenter(sf::Rect<T> obj, sf::Rect<T> dest)
 }
 
 // DEPRECATED, DUMMY
-template<class T>
-sf::Transform
-MoveToScreenCenter(sf::Rect<T> obj, sf::Rect<T> screen){ return AlignToCenter(obj, screen) }
+// template<class T>
+// sf::Transform
+// MoveToScreenCenter(sf::Rect<T> obj, sf::Rect<T> screen){ return AlignToCenter(obj, screen) }
 
-sf::Transform Skew(float angleH, float angleV)
-{
-  return sf::Transform{ 1.f,          sinf(angleH), 0.f, /**/
-                        sinf(angleV), 1.f,          0.f, /**/
-                        0.f,          0.f,          1.f };
-}
+sf::Transform
+Skew(float angleH, float angleV);
+
+COMMON::EDirect
+GetDirectNextCell(uint8_t x, uint8_t y, uint8_t x_new, uint8_t y_new);
+
 #pragma endregion
 
 /**
@@ -104,27 +105,27 @@ MoveToScreenCenter(sf::RectangleShape* obj, sf::Rect<T> screen)
   obj->setPosition(offset_x, offset_y);
 }
 
-void
-CalculatePoints(sf::VertexArray& m_points,
-                sf::Vector2f m_size,
-                sf::Vector2f position,
-                uint32_t m_cellSize)
-{
-  /// Кол-во точек для всех линий
-  m_points.resize(2 * ((m_size.x + m_size.y) / m_cellSize + 2));
+// void
+// CalculatePoints(sf::VertexArray& m_points,
+//                 sf::Vector2f m_size,
+//                 sf::Vector2f position,
+//                 uint32_t m_cellSize)
+// {
+//   /// Кол-во точек для всех линий
+//   m_points.resize(2 * ((m_size.x + m_size.y) / m_cellSize + 2));
 
-  uint32_t index = 0;
+//   uint32_t index = 0;
 
-  /// Смещение к центру по оси х
-  uint32_t offset = uint32_t(m_size.x / 2) % m_cellSize;
-  for (float i = position.x; i < (m_size.x + position.x); i += m_cellSize, index += 2) {
-    m_points[index].position = sf::Vector2f(i + offset, 0);
-    m_points[index + 1].position = sf::Vector2f(i + offset, m_size.y);
-  }
-  /// Смещение к центру по оси y
-  offset = uint32_t(m_size.y / 2) % m_cellSize;
-  for (float i = position.y; i < m_size.y + position.y; i += m_cellSize, index += 2) {
-    m_points[index].position = sf::Vector2f(0, i + offset);
-    m_points[index + 1].position = sf::Vector2f(m_size.x, i + offset);
-  }
-}
+//   /// Смещение к центру по оси х
+//   uint32_t offset = uint32_t(m_size.x / 2) % m_cellSize;
+//   for (float i = position.x; i < (m_size.x + position.x); i += m_cellSize, index += 2) {
+//     m_points[index].position = sf::Vector2f(i + offset, 0);
+//     m_points[index + 1].position = sf::Vector2f(i + offset, m_size.y);
+//   }
+//   /// Смещение к центру по оси y
+//   offset = uint32_t(m_size.y / 2) % m_cellSize;
+//   for (float i = position.y; i < m_size.y + position.y; i += m_cellSize, index += 2) {
+//     m_points[index].position = sf::Vector2f(0, i + offset);
+//     m_points[index + 1].position = sf::Vector2f(m_size.x, i + offset);
+//   }
+// }

@@ -1,8 +1,8 @@
 #include "Field.h"
 
 Field::Field()
-  : m_width(0)
-  , m_height(0)
+  : m_width(7)
+  , m_height(7)
 {
 }
 

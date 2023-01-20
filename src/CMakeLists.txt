@@ -2,11 +2,12 @@ cmake_minimum_required(VERSION 3.0)
 
 set(CMAKE_CXX_STANDARD 11)
 
+set(coregame_dir CoreGame/)
 set(engine_dir Engine/)
 set(utils_dir Utils/)
 
-file(GLOB_RECURSE common_sources ${engine_dir}*.cpp ${utils_dir}*.cpp)
-file(GLOB_RECURSE common_headers ${engine_dir}*.h ${utils_dir}*.h)
+file(GLOB_RECURSE common_sources ${engine_dir}*.cpp ${utils_dir}*.cpp ${coregame_dir}*.cpp)
+file(GLOB_RECURSE common_headers ${engine_dir}*.h ${utils_dir}*.h ${coregame_dir}*.h)
 
 file(GLOB_RECURSE src_sources *.cpp)
 file(GLOB_RECURSE src_headers *.h)

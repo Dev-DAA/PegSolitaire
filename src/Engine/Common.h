@@ -32,7 +32,7 @@ enum class EDirect
   LEFT = 1,
   UP = 2,
   DOWN = 3,
-  UNKNOW = 4,
+  UNKNOWN = 4,
 };
 
 enum class EGameState

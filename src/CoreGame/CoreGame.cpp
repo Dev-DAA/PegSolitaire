@@ -72,18 +72,6 @@ CoreGame::StartGame()
   activeRectShape.setOutlineColor(sf::Color::Green);
   activeRectShape.setOutlineThickness(4.f);
 
-  //   sf::RectangleShape SetCell(sf::Vector2f(m_cellSize, m_cellSize));
-  //   sf::RectangleShape LockCell(sf::Vector2f(m_cellSize, m_cellSize));
-  //   sf::RectangleShape FreeCell(sf::Vector2f(m_cellSize, m_cellSize));
-
-  //   SetCell.setFillColor(sf::Color::Red);
-  //   LockCell.setFillColor(sf::Color::Green);
-  //   FreeCell.setFillColor(sf::Color(0, 187, 255, 255));
-
-  //   int selectX = 3;
-  //   int selectY = 2;
-  //   SetCell.move(m_cellSize * selectX, m_cellSize * selectY);
-
 #pragma region "[DEBUG] Центр экрана"
   sf::VertexArray centerPnt(sf::Lines, 4);
 
@@ -101,17 +89,20 @@ CoreGame::StartGame()
   std::vector<Player> playerList;
   uint32_t SizeCell = m_cellSize - 2;
   sf::RectangleShape MouseCell(sf::Vector2f(SizeCell, SizeCell));
+  // Параметры для плавного изменения альфы
   uint8_t alpha = 0;
   uint16_t angle = 0;
-  bool directionAlpha = false;
-  MouseCell.setFillColor(sf::Color(255, 255, 255, alpha));
-  sf::Clock clock; // starts the clock
+  // Смещение поля в экранных координатах
+  uint32_t OffsetScreen_W;
+  uint32_t OffsetScreen_H;
+  uint32_t OffsetCell_W;
+  uint32_t OffsetCell_H;
+  // Время для анимации ячейки
+  sf::Clock clock;
   while (m_window.isOpen()) {
     m_window.clear(sf::Color(0, 187, 255, 255));
 
-    m_window.draw(grid, m_gridTr);
-    m_window.draw(activeRectShape, m_activeTr);
-    // m_window.draw(SetCell, m_activeTr);
+#pragma region "Состояние игры"
     switch (m_StateGame) {
       case COMMON::EGameState::MENU: {
         Field& field = Singleton<Field>::GetInstance();
@@ -136,10 +127,13 @@ CoreGame::StartGame()
 
         COMMON::ECell typeCell;
 
-        uint32_t Offset_W = m_cellSize * ((m_activeRectSize.x / m_cellSize / 2) -
-                                          std::floor((float)field.GetWidth() / 2));
-        uint32_t Offset_H = m_cellSize * ((m_activeRectSize.y / m_cellSize / 2) -
-                                          std::round((float)field.GetHeight() / 2));
+        OffsetScreen_W = m_cellSize * ((m_activeRectSize.x / m_cellSize / 2) -
+                                       std::floor((float)field.GetWidth() / 2));
+        OffsetScreen_H = m_cellSize * ((m_activeRectSize.y / m_cellSize / 2) -
+                                       std::round((float)field.GetHeight() / 2));
+
+        OffsetCell_W = OffsetScreen_W / m_cellSize;
+        OffsetCell_H = OffsetScreen_H / m_cellSize;
         sf::RectangleShape Cell(sf::Vector2f(SizeCell, SizeCell));
         for (size_t i = 0; i < field.GetWidth(); i++) {
           for (size_t j = 0; j < field.GetHeight(); j++) {
@@ -158,13 +152,15 @@ CoreGame::StartGame()
                 break;
               }
             }
-            Cell.setPosition(m_cellSize * i + Offset_W, m_cellSize * j + Offset_H);
+            Cell.setPosition(m_cellSize * i + OffsetScreen_W, m_cellSize * j + OffsetScreen_H);
             m_window.draw(Cell, m_activeTr);
           }
         }
       }
     }
+#pragma endregion
 
+#pragma region "Отрисовка всех элементов"
     // Получаем экранные координаты
     sf::Vector2i pixelPos = sf::Mouse::getPosition(m_window);
     // Трансформируем координаты в активную область
@@ -189,9 +185,14 @@ CoreGame::StartGame()
       activeCell.setFillColor(sf::Color(0, 255, 0, alpha));
       m_window.draw(activeCell, m_activeTr);
     }
+
+    m_window.draw(grid, m_gridTr);
+    m_window.draw(activeRectShape, m_activeTr);
     m_window.draw(centerPnt);
     m_window.display();
+#pragma endregion
 
+#pragma region "Обработка событий игры"
     sf::Event event;
     while (m_window.pollEvent(event)) {
       switch (event.type) {
@@ -204,18 +205,66 @@ CoreGame::StartGame()
           break;
         case sf::Event::MouseButtonPressed:
           if (event.key.code == sf::Mouse::Left) {
-            // TODO продумать логику загрузки направления на бэк и связать это с гуи
-            sf::RectangleShape ActiveCell(sf::Vector2f(SizeCell, SizeCell));
-            // Запоминаем кординаты ячейки на которую нажали
-            ActiveCell.setPosition(m_cellSize * aciveCellPos.x, m_cellSize * aciveCellPos.y);
-            // Добавляем в массив выбранную ячейку
-            // TODO сделать условие и сделать check хода, так же нужна возможность правильно
-            // определять тип выбранной ячейки
-            m_ActiveCells.push_back(ActiveCell);
+            // Переводим координаты выбранной ячейки в координаты поля и получаем тип выбранной
+            // ячейки
+            COMMON::ECell TypeCell = Singleton<IGame>::GetInstance().GetField().GetCell(
+              aciveCellPos.x - OffsetCell_W, aciveCellPos.y - OffsetCell_H);
+            // Если ещё не было выбрано ячейки, то выбираем ту с которой будем ходитьы
+            if (m_ActiveCells.empty()) {
+              if (TypeCell == COMMON::ECell::SET) {
+                // Запоминаем координаты последей выбранной ячейки
+                m_PosLastCell.x = aciveCellPos.x;
+                m_PosLastCell.y = aciveCellPos.y;
+                // Создаём ячейку и помещаем в массив
+                sf::RectangleShape ActiveCell(sf::Vector2f(SizeCell, SizeCell));
+                ActiveCell.setPosition(m_cellSize * aciveCellPos.x, m_cellSize * aciveCellPos.y);
+                m_ActiveCells.push_back(ActiveCell);
+              }
+            } else {
+              // TODO Просто так захотелось)) знаю что говно, но надо будет обдумать это))
+              auto search = std::find_if(m_ActiveCells.begin(),
+                                         m_ActiveCells.end(),
+                                         [=](sf::RectangleShape const& activeCell) {
+                                           auto x = activeCell.getPosition().x / m_cellSize;
+                                           auto y = activeCell.getPosition().y / m_cellSize;
+                                           return (aciveCellPos.x == x) && (aciveCellPos.y == y);
+                                         });
+              if (search != m_ActiveCells.end()) {
+                sf::Vector2f FirstPosCell = m_ActiveCells.front().getPosition();
+                sf::Vector2f PosCell2Field = { (FirstPosCell.x / m_cellSize) - OffsetCell_W,
+                                               (FirstPosCell.y / m_cellSize) - OffsetCell_H };
+
+                Singleton<IGame>::GetInstance().DoMove(
+                  PosCell2Field.x, PosCell2Field.y, m_DirectCells);
+                m_ActiveCells.clear();
+                m_DirectCells.clear();
+                break;
+              }
+
+              if (TypeCell == COMMON::ECell::FREE) {
+
+                COMMON::EDirect Direct = GetDirectNextCell(m_PosLastCell.x - OffsetCell_W,
+                                                           m_PosLastCell.y - OffsetCell_H,
+                                                           aciveCellPos.x - OffsetCell_W,
+                                                           aciveCellPos.y - OffsetCell_H);
+                if (Direct != COMMON::EDirect::UNKNOWN) {
+                  // Запоминаем координаты последей выбранной ячейки
+                  m_PosLastCell.x = aciveCellPos.x;
+                  m_PosLastCell.y = aciveCellPos.y;
+                  // Создаём ячейку и помещаем в массив
+                  sf::RectangleShape ActiveCell(sf::Vector2f(SizeCell, SizeCell));
+                  ActiveCell.setPosition(m_cellSize * aciveCellPos.x, m_cellSize * aciveCellPos.y);
+                  m_ActiveCells.push_back(ActiveCell);
+                  // Запоминаем направление которое выбрали
+                  m_DirectCells.push_back(Direct);
+                }
+              }
+            }
           }
         default:
           break;
       }
     }
-  }
+#pragma endregion
+  } // m_window.isOpen()
 }

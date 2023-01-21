@@ -9,9 +9,11 @@
 #include "../Utils/Singletone.h"
 
 #include <SFML/Graphics.hpp>
+#include <algorithm>
 #include <cmath>
 #include <iostream>
 #include <vector>
+
 
 class CoreGame
 {
@@ -24,8 +26,12 @@ public:
   void StartGame();
 
 private:
-  sf::Vector2f m_PosAciveCell;
+  // Координаты последней выбранной ячейки
+  sf::Vector2f m_PosLastCell;
+  // Массив выбранных ячеек
   std::vector<sf::RectangleShape> m_ActiveCells;
+  // Массив направления хода
+  std::vector<COMMON::EDirect> m_DirectCells;
   // Размер ячейки
   uint32_t m_cellSize;
 

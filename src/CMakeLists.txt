@@ -14,8 +14,7 @@ file(GLOB_RECURSE src_headers *.h)
 
 # set(SFML_STATIC_LIBRARIES TRUE)
 
-set(CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/libs/SFML-2.5.1-windows-vc15-64-bit/")
-
+# set(CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/libs/SFML-2.5.1-windows-vc15-64-bit/")
 
 
 find_package(
@@ -38,10 +37,21 @@ target_link_libraries(${PROJECT_NAME} glog sfml-system sfml-window
                       sfml-graphics)
 
 set(BLUEPRINTS_DIR ../Blueprints)
-
 file(GLOB blueprints ${BLUEPRINTS_DIR}/*.*)
 
 foreach(item IN LISTS blueprints)
+    get_filename_component(dest_filename ${item} NAME)
+
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy ${item} 
+        $<TARGET_FILE_DIR:${PROJECT_NAME}>/${dest_filename}
+    )
+endforeach()
+
+set(FONT_DIR ../Font)
+file(GLOB font ${FONT_DIR}/*.*)
+
+foreach(item IN LISTS font)
     get_filename_component(dest_filename ${item} NAME)
 
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD

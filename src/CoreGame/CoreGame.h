@@ -12,8 +12,8 @@
 #include <algorithm>
 #include <cmath>
 #include <iostream>
+#include <sstream>
 #include <vector>
-
 
 class CoreGame
 {
@@ -26,6 +26,10 @@ public:
   void StartGame();
 
 private:
+  // Проверка выбранной повторной ячейки
+  bool CheckRepeatedCell(sf::Vector2i ActiveCell);
+
+private:
   // Координаты последней выбранной ячейки
   sf::Vector2f m_PosLastCell;
   // Массив выбранных ячеек
@@ -34,6 +38,16 @@ private:
   std::vector<COMMON::EDirect> m_DirectCells;
   // Размер ячейки
   uint32_t m_cellSize;
+  // Шрифт
+  sf::Font m_font;
+  // Текст для очков
+  sf::Text m_TextScore;
+  // Текст game over
+  sf::Text m_TextGameOver;
+  // Размер шрифта
+  const uint8_t SIZE_FONT = 25;
+  // Проверка конца игры
+  bool m_IsGameOver = false;
 
   COMMON::EGameState m_StateGame = COMMON::EGameState::MENU;
 

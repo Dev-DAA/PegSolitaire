@@ -58,6 +58,18 @@ CoreGame::CoreGame(/* args */)
   m_gridTr = AlignToCenter(coverRect, m_screenRect) * trScale * trSkew * ToOrigin(m_coverSize);
   m_activeTr = AlignToCenter(activeRect, m_screenRect) * FromOrigin(m_activeRectSize) * trScale *
                trSkew * ToOrigin(m_activeRectSize);
+
+  // Загрузка шрифта
+  if (!m_font.loadFromFile("font.ttf")) {
+    std::cout << ".Error while loading font" << std::endl;
+  }
+
+  m_TextScore.setFont(m_font);
+  m_TextGameOver.setFont(m_font);
+
+  m_TextGameOver.setString("Game Over!");
+  m_TextGameOver.setCharacterSize(SIZE_FONT * 2);
+  m_TextGameOver.setColor(sf::Color::Black);
 }
 
 CoreGame::~CoreGame() {}
@@ -182,14 +194,45 @@ CoreGame::StartGame()
     m_window.draw(MouseCell, m_activeTr);
     // Отрисовываем все выбранные ячейки
     for (auto& activeCell : m_ActiveCells) {
-      activeCell.setFillColor(sf::Color(0, 255, 0, alpha));
+      // activeCell.setFillColor(sf::Color(0, 255, 0, alpha));
+      sf::Color color = activeCell.getFillColor();
+      color.a = alpha;
+      activeCell.setFillColor(color);
       m_window.draw(activeCell, m_activeTr);
     }
 
     m_window.draw(grid, m_gridTr);
     m_window.draw(activeRectShape, m_activeTr);
     m_window.draw(centerPnt);
+
+#pragma region "Тестовый код для шрифтов"
+
+    std::vector<Player> listPlayer = Singleton<IGame>::GetInstance().GetPlayerList();
+    if (!listPlayer.empty()) {
+      std::ostringstream playerScoreString;
+      playerScoreString << listPlayer[0].GetScore();
+      m_TextScore.setString("Score:" + playerScoreString.str());
+      m_TextScore.setCharacterSize(SIZE_FONT);
+      m_TextScore.setColor(sf::Color::Black);
+      m_TextScore.setPosition(activeRectShape.getPosition());
+      m_window.draw(m_TextScore, m_activeTr);
+    }
+
+    if (m_IsGameOver) {
+      auto act_size_w = ACTIVE_RECT_WIDTH / 2;
+      auto act_size_h = ACTIVE_RECT_HEIGHT / 2;
+      auto count_symb = m_TextGameOver.getString().getSize();
+      auto size_pix_symb = m_TextGameOver.getCharacterSize();
+      auto offset_center_x = (count_symb / 2) * size_pix_symb;
+      auto offset_center_y = size_pix_symb / 2;
+      m_TextGameOver.setPosition(act_size_w - offset_center_x, act_size_h - offset_center_y);
+      m_window.draw(m_TextGameOver, m_activeTr);
+    }
+
+#pragma endregion
+
     m_window.display();
+
 #pragma endregion
 
 #pragma region "Обработка событий игры"
@@ -218,18 +261,16 @@ CoreGame::StartGame()
                 // Создаём ячейку и помещаем в массив
                 sf::RectangleShape ActiveCell(sf::Vector2f(SizeCell, SizeCell));
                 ActiveCell.setPosition(m_cellSize * aciveCellPos.x, m_cellSize * aciveCellPos.y);
+                ActiveCell.setFillColor(sf::Color(255, 0, 200, 255));
                 m_ActiveCells.push_back(ActiveCell);
               }
             } else {
-              // TODO Просто так захотелось)) знаю что говно, но надо будет обдумать это))
-              auto search = std::find_if(m_ActiveCells.begin(),
-                                         m_ActiveCells.end(),
-                                         [=](sf::RectangleShape const& activeCell) {
-                                           auto x = activeCell.getPosition().x / m_cellSize;
-                                           auto y = activeCell.getPosition().y / m_cellSize;
-                                           return (aciveCellPos.x == x) && (aciveCellPos.y == y);
-                                         });
-              if (search != m_ActiveCells.end()) {
+              sf::RectangleShape LastCell = m_ActiveCells.back();
+              auto last_cell_x = LastCell.getPosition().x / m_cellSize;
+              auto last_cell_y = LastCell.getPosition().y / m_cellSize;
+              auto clickLastCell =
+                (aciveCellPos.x == last_cell_x) && (aciveCellPos.y == last_cell_y);
+              if (clickLastCell) {
                 sf::Vector2f FirstPosCell = m_ActiveCells.front().getPosition();
                 sf::Vector2f PosCell2Field = { (FirstPosCell.x / m_cellSize) - OffsetCell_W,
                                                (FirstPosCell.y / m_cellSize) - OffsetCell_H };
@@ -238,10 +279,11 @@ CoreGame::StartGame()
                   PosCell2Field.x, PosCell2Field.y, m_DirectCells);
                 m_ActiveCells.clear();
                 m_DirectCells.clear();
+                m_IsGameOver = Singleton<IGame>::GetInstance().IsGameOver();
                 break;
               }
 
-              if (TypeCell == COMMON::ECell::FREE) {
+              if ((TypeCell == COMMON::ECell::FREE) && (!CheckRepeatedCell(aciveCellPos))) {
 
                 COMMON::EDirect Direct = GetDirectNextCell(m_PosLastCell.x - OffsetCell_W,
                                                            m_PosLastCell.y - OffsetCell_H,
@@ -254,6 +296,7 @@ CoreGame::StartGame()
                   // Создаём ячейку и помещаем в массив
                   sf::RectangleShape ActiveCell(sf::Vector2f(SizeCell, SizeCell));
                   ActiveCell.setPosition(m_cellSize * aciveCellPos.x, m_cellSize * aciveCellPos.y);
+                  ActiveCell.setFillColor(sf::Color(0, 255, 0, 255));
                   m_ActiveCells.push_back(ActiveCell);
                   // Запоминаем направление которое выбрали
                   m_DirectCells.push_back(Direct);
@@ -267,4 +310,19 @@ CoreGame::StartGame()
     }
 #pragma endregion
   } // m_window.isOpen()
+}
+
+bool
+CoreGame::CheckRepeatedCell(sf::Vector2i ActiveCell)
+{
+  for (auto cell : m_ActiveCells) {
+    auto cell_x = cell.getPosition().x / m_cellSize;
+    auto cell_y = cell.getPosition().y / m_cellSize;
+
+    if ((ActiveCell.x == cell_x) && (ActiveCell.y == cell_y)) {
+      return true;
+    }
+  }
+
+  return false;
 }

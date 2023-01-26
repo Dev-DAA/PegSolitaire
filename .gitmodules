@@ -1,6 +1,0 @@
-[submodule "glog"]
-	path = glog
-	url = https://github.com/google/glog.git
-[submodule "googletest"]
-	path = googletest
-	url = https://github.com/google/googletest.git

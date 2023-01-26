@@ -2,6 +2,7 @@
 
 #include "../Engine/Common.h"
 #include "../Engine/Field.h"
+#include "../Engine/FieldGui.h"
 #include "../Engine/Grid.h"
 #include "../Engine/IGame.h"
 #include "../Engine/Math.h"
@@ -28,12 +29,12 @@ public:
 private:
   // Проверка выбранной повторной ячейки
   bool CheckRepeatedCell(sf::Vector2i ActiveCell);
+  // Рассчитать все смещения
+  void CalculateOffset();
 
 private:
   // Координаты последней выбранной ячейки
   sf::Vector2f m_PosLastCell;
-  // Массив выбранных ячеек
-  std::vector<sf::RectangleShape> m_ActiveCells;
   // Массив направления хода
   std::vector<COMMON::EDirect> m_DirectCells;
   // Размер ячейки
@@ -48,6 +49,10 @@ private:
   const uint8_t SIZE_FONT = 25;
   // Проверка конца игры
   bool m_IsGameOver = false;
+
+  // Смещение поля в ячейках
+  uint32_t m_OffsetCell_W;
+  uint32_t m_OffsetCell_H;
 
   COMMON::EGameState m_StateGame = COMMON::EGameState::MENU;
 

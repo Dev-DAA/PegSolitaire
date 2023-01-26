@@ -78,6 +78,7 @@ void
 CoreGame::StartGame()
 {
   Grid grid(m_coverSize, m_cellSize);
+  FieldGui fieldGui;
 
   sf::RectangleShape activeRectShape(m_activeRectSize);
   activeRectShape.setFillColor(sf::Color::Transparent);
@@ -98,17 +99,11 @@ CoreGame::StartGame()
   centerPnt[3].color = sf::Color::Magenta;
 #pragma endregion
 
-  std::vector<Player> playerList;
   uint32_t SizeCell = m_cellSize - 2;
-  sf::RectangleShape MouseCell(sf::Vector2f(SizeCell, SizeCell));
   // Параметры для плавного изменения альфы
   uint8_t alpha = 0;
   uint16_t angle = 0;
-  // Смещение поля в экранных координатах
-  uint32_t OffsetScreen_W;
-  uint32_t OffsetScreen_H;
-  uint32_t OffsetCell_W;
-  uint32_t OffsetCell_H;
+
   // Время для анимации ячейки
   sf::Clock clock;
   while (m_window.isOpen()) {
@@ -119,13 +114,22 @@ CoreGame::StartGame()
       case COMMON::EGameState::MENU: {
         Field& field = Singleton<Field>::GetInstance();
         IGame& game = Singleton<IGame>::GetInstance();
+
         Player player;
+        std::vector<Player> playerList;
         player.SetName("Alex");
         player.SetEntity(COMMON::EPlayerType::HUMAN);
         playerList.push_back(player);
+
         field.Create("ENGLISH");
-        game.SetField(field);
+
         game.SetPlayerList(playerList);
+        game.SetField(field);
+
+        // Вызываем апдейт у отрисовывающегося поля и рассчитываем смещения
+        fieldGui.update();
+        CalculateOffset();
+        //
         if (!game.CreateNewGame()) {
           std::cout << "Game Failed!" << std::endl;
           return;
@@ -134,40 +138,7 @@ CoreGame::StartGame()
         break;
       }
       case COMMON::EGameState::GAME: {
-        IGame& game = Singleton<IGame>::GetInstance();
-        Field field = game.GetField();
-
-        COMMON::ECell typeCell;
-
-        OffsetScreen_W = m_cellSize * ((m_activeRectSize.x / m_cellSize / 2) -
-                                       std::floor((float)field.GetWidth() / 2));
-        OffsetScreen_H = m_cellSize * ((m_activeRectSize.y / m_cellSize / 2) -
-                                       std::round((float)field.GetHeight() / 2));
-
-        OffsetCell_W = OffsetScreen_W / m_cellSize;
-        OffsetCell_H = OffsetScreen_H / m_cellSize;
-        sf::RectangleShape Cell(sf::Vector2f(SizeCell, SizeCell));
-        for (size_t i = 0; i < field.GetWidth(); i++) {
-          for (size_t j = 0; j < field.GetHeight(); j++) {
-            typeCell = field.GetCell(i, j);
-            switch (typeCell) {
-              case COMMON::ECell::FREE: {
-                Cell.setFillColor(sf::Color(0, 187, 255, 255));
-                break;
-              }
-              case COMMON::ECell::SET: {
-                Cell.setFillColor(sf::Color::Red);
-                break;
-              }
-              case COMMON::ECell::LOCK: {
-                Cell.setFillColor(sf::Color(99, 99, 99, 255));
-                break;
-              }
-            }
-            Cell.setPosition(m_cellSize * i + OffsetScreen_W, m_cellSize * j + OffsetScreen_H);
-            m_window.draw(Cell, m_activeTr);
-          }
-        }
+        // TODO
       }
     }
 #pragma endregion
@@ -177,10 +148,10 @@ CoreGame::StartGame()
     sf::Vector2i pixelPos = sf::Mouse::getPosition(m_window);
     // Трансформируем координаты в активную область
     sf::Vector2f activePos = m_activeTr.getInverse().transformPoint(pixelPos.x, pixelPos.y);
+    fieldGui.SetPositionMouse(activePos);
     // Получаем координаты ячейки на которую указывает курсор
     sf::Vector2i aciveCellPos = sf::Vector2i(activePos.x / m_cellSize, activePos.y / m_cellSize);
-    // Выставляем ячейку под курсор
-    MouseCell.setPosition(m_cellSize * aciveCellPos.x, m_cellSize * aciveCellPos.y);
+
     // Делаем подсветку плавной для эффекта выбора клетки
     sf::Time elapsed1 = clock.getElapsedTime();
     if (elapsed1.asMilliseconds() > 5) {
@@ -189,20 +160,15 @@ CoreGame::StartGame()
     }
     float radians = DEG2RAD(angle);
     alpha = 255 * (sin(radians) + 1) / 2.f;
-    MouseCell.setFillColor(sf::Color(255, 255, 255, alpha));
-    // Отрисовываем ячейку под курсором
-    m_window.draw(MouseCell, m_activeTr);
-    // Отрисовываем все выбранные ячейки
-    for (auto& activeCell : m_ActiveCells) {
-      // activeCell.setFillColor(sf::Color(0, 255, 0, alpha));
-      sf::Color color = activeCell.getFillColor();
-      color.a = alpha;
-      activeCell.setFillColor(color);
-      m_window.draw(activeCell, m_activeTr);
-    }
+    fieldGui.SetAlpha(alpha);
 
+    // Отрисовываем фон
     m_window.draw(grid, m_gridTr);
+    // Отрисовываем игровое поле и всю активную область
+    m_window.draw(fieldGui, m_activeTr);
+    // TODO Отрисовываем активную область для разработки
     m_window.draw(activeRectShape, m_activeTr);
+    // TODO Отрисовываем центр экрана для разработки
     m_window.draw(centerPnt);
 
 #pragma region "Тестовый код для шрифтов"
@@ -251,53 +217,42 @@ CoreGame::StartGame()
             // Переводим координаты выбранной ячейки в координаты поля и получаем тип выбранной
             // ячейки
             COMMON::ECell TypeCell = Singleton<IGame>::GetInstance().GetField().GetCell(
-              aciveCellPos.x - OffsetCell_W, aciveCellPos.y - OffsetCell_H);
-            // Если ещё не было выбрано ячейки, то выбираем ту с которой будем ходитьы
-            if (m_ActiveCells.empty()) {
+              aciveCellPos.x - m_OffsetCell_W, aciveCellPos.y - m_OffsetCell_H);
+            // Если ещё не было выбрано ячейки, то выбираем ту с которой будем ходить
+            if (fieldGui.GetEmptyActiveCells()) {
               if (TypeCell == COMMON::ECell::SET) {
                 // Запоминаем координаты последей выбранной ячейки
                 m_PosLastCell.x = aciveCellPos.x;
                 m_PosLastCell.y = aciveCellPos.y;
                 // Создаём ячейку и помещаем в массив
-                sf::RectangleShape ActiveCell(sf::Vector2f(SizeCell, SizeCell));
-                ActiveCell.setPosition(m_cellSize * aciveCellPos.x, m_cellSize * aciveCellPos.y);
-                ActiveCell.setFillColor(sf::Color(255, 0, 200, 255));
-                m_ActiveCells.push_back(ActiveCell);
+                fieldGui.AddActiveCell(
+                  sf::Vector2f(m_cellSize * aciveCellPos.x, m_cellSize * aciveCellPos.y), true);
               }
             } else {
-              sf::RectangleShape LastCell = m_ActiveCells.back();
-              auto last_cell_x = LastCell.getPosition().x / m_cellSize;
-              auto last_cell_y = LastCell.getPosition().y / m_cellSize;
-              auto clickLastCell =
-                (aciveCellPos.x == last_cell_x) && (aciveCellPos.y == last_cell_y);
-              if (clickLastCell) {
-                sf::Vector2f FirstPosCell = m_ActiveCells.front().getPosition();
-                sf::Vector2f PosCell2Field = { (FirstPosCell.x / m_cellSize) - OffsetCell_W,
-                                               (FirstPosCell.y / m_cellSize) - OffsetCell_H };
-
+              if (fieldGui.CheckLastClick(aciveCellPos)) {
+                sf::Vector2f PosCell2Field = fieldGui.GetFirstActiveCell();
                 Singleton<IGame>::GetInstance().DoMove(
                   PosCell2Field.x, PosCell2Field.y, m_DirectCells);
-                m_ActiveCells.clear();
+                fieldGui.update();
+                fieldGui.ClearActiveCells();
                 m_DirectCells.clear();
                 m_IsGameOver = Singleton<IGame>::GetInstance().IsGameOver();
                 break;
               }
 
-              if ((TypeCell == COMMON::ECell::FREE) && (!CheckRepeatedCell(aciveCellPos))) {
-
-                COMMON::EDirect Direct = GetDirectNextCell(m_PosLastCell.x - OffsetCell_W,
-                                                           m_PosLastCell.y - OffsetCell_H,
-                                                           aciveCellPos.x - OffsetCell_W,
-                                                           aciveCellPos.y - OffsetCell_H);
+              if (TypeCell == COMMON::ECell::FREE) {
+                // Получаем направление куда планируем сделать ход
+                COMMON::EDirect Direct = GetDirectNextCell(m_PosLastCell.x - m_OffsetCell_W,
+                                                           m_PosLastCell.y - m_OffsetCell_H,
+                                                           aciveCellPos.x - m_OffsetCell_W,
+                                                           aciveCellPos.y - m_OffsetCell_H);
                 if (Direct != COMMON::EDirect::UNKNOWN) {
                   // Запоминаем координаты последей выбранной ячейки
                   m_PosLastCell.x = aciveCellPos.x;
                   m_PosLastCell.y = aciveCellPos.y;
                   // Создаём ячейку и помещаем в массив
-                  sf::RectangleShape ActiveCell(sf::Vector2f(SizeCell, SizeCell));
-                  ActiveCell.setPosition(m_cellSize * aciveCellPos.x, m_cellSize * aciveCellPos.y);
-                  ActiveCell.setFillColor(sf::Color(0, 255, 0, 255));
-                  m_ActiveCells.push_back(ActiveCell);
+                  fieldGui.AddActiveCell(
+                    sf::Vector2f(m_cellSize * aciveCellPos.x, m_cellSize * aciveCellPos.y));
                   // Запоминаем направление которое выбрали
                   m_DirectCells.push_back(Direct);
                 }
@@ -312,17 +267,17 @@ CoreGame::StartGame()
   } // m_window.isOpen()
 }
 
-bool
-CoreGame::CheckRepeatedCell(sf::Vector2i ActiveCell)
+void
+CoreGame::CalculateOffset()
 {
-  for (auto cell : m_ActiveCells) {
-    auto cell_x = cell.getPosition().x / m_cellSize;
-    auto cell_y = cell.getPosition().y / m_cellSize;
-
-    if ((ActiveCell.x == cell_x) && (ActiveCell.y == cell_y)) {
-      return true;
-    }
-  }
-
-  return false;
+  // Получаем поле
+  Field field = Singleton<IGame>::GetInstance().GetField();
+  // Рассчитываем смещение в пикселях
+  auto OffsetScreen_W =
+    m_cellSize * ((m_activeRectSize.x / m_cellSize / 2) - std::floor((float)field.GetWidth() / 2));
+  auto OffsetScreen_H =
+    m_cellSize * ((m_activeRectSize.y / m_cellSize / 2) - std::round((float)field.GetHeight() / 2));
+  // Рассчитываем смещеение в ячейках
+  m_OffsetCell_W = OffsetScreen_W / m_cellSize;
+  m_OffsetCell_H = OffsetScreen_H / m_cellSize;
 }

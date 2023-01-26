@@ -13,7 +13,7 @@ public:
    */
   Grid(sf::Vector2f coverSize, uint32_t cellSize);
 
-  void draw(sf::RenderTarget& target, sf::RenderStates states) const;
+  void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
 
 private:
   /**

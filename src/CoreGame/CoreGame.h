@@ -8,6 +8,8 @@
 #include "../Engine/Math.h"
 #include "../Engine/Player.h"
 #include "../Utils/Singletone.h"
+#include "../Engine/Widget.h"
+#include "../Engine/SubEventWidget.h"
 
 #include <SFML/Graphics.hpp>
 #include <algorithm>

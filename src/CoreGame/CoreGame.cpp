@@ -99,6 +99,15 @@ CoreGame::StartGame()
   centerPnt[3].color = sf::Color::Magenta;
 #pragma endregion
 
+#pragma region "ТЕСТОВЫЙ КОД ДЛЯ ВИДЖЕТА"
+  Widget widget;
+  Widget widget1;
+  widget.setPosition(sf::Vector2f(250.0f, 250.0f));
+  widget.setSize(sf::Vector2f(200.0f, 200.0f));
+  widget1.setPosition(sf::Vector2f(250.0f, 600.0f));
+  widget1.setSize(sf::Vector2f(200.0f, 50.0f));
+#pragma endregion
+
   uint32_t SizeCell = m_cellSize - 2;
   // Параметры для плавного изменения альфы
   uint8_t alpha = 0;
@@ -106,6 +115,7 @@ CoreGame::StartGame()
 
   // Время для анимации ячейки
   sf::Clock clock;
+
   while (m_window.isOpen()) {
     m_window.clear(sf::Color(0, 187, 255, 255));
 
@@ -146,6 +156,8 @@ CoreGame::StartGame()
 #pragma region "Отрисовка всех элементов"
     // Получаем экранные координаты
     sf::Vector2i pixelPos = sf::Mouse::getPosition(m_window);
+    SubEventWidget& subEventWidget = Singleton<SubEventWidget>::GetInstance();
+    subEventWidget.UpdatePositionMouse(sf::Vector2f(pixelPos));
     // Трансформируем координаты в активную область
     sf::Vector2f activePos = m_activeTr.getInverse().transformPoint(pixelPos.x, pixelPos.y);
     fieldGui.SetPositionMouse(activePos);
@@ -170,6 +182,9 @@ CoreGame::StartGame()
     m_window.draw(activeRectShape, m_activeTr);
     // TODO Отрисовываем центр экрана для разработки
     m_window.draw(centerPnt);
+    // TODO Тестовый виджет;
+    m_window.draw(widget);
+    m_window.draw(widget1);
 
 #pragma region "Тестовый код для шрифтов"
 
@@ -213,6 +228,7 @@ CoreGame::StartGame()
             m_window.close();
           break;
         case sf::Event::MouseButtonPressed:
+          subEventWidget.UpdateEvent(event);
           if (event.key.code == sf::Mouse::Left) {
             // Переводим координаты выбранной ячейки в координаты поля и получаем тип выбранной
             // ячейки
@@ -259,6 +275,8 @@ CoreGame::StartGame()
               }
             }
           }
+        case sf::Event::MouseButtonReleased:
+          subEventWidget.UpdateEvent(event);
         default:
           break;
       }

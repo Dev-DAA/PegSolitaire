@@ -1,28 +1,69 @@
 cmake_minimum_required(VERSION 3.10.2)
 
-if(WIN32 AND DEFINED ENV{VCPKG_ROOT} AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
-  set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
-      CACHE STRING "")
-endif()
+################################################################################
+# vcpkg
+################################################################################
+include (${CMAKE_SOURCE_DIR}/cmake/vcpkg.cmake)
 
+################################################################################
+# Project
+################################################################################
 project(SolitaireGame VERSION 0.1.0)
 
-set(BUILD_SHARED_LIBS OFF)
-option(BUILD_TESTING OFF)
-option(WITH_GFLAGS OFF)
-add_compile_options(-DHAVE_SNPRINTF)
-set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
-if (MSVC)
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
-endif()
+set(CMAKE_CXX_STANDARD 11)
 
-add_subdirectory(glog)
-include_directories(glog)
+################################################################################
+# External libraries
+################################################################################
+find_package(glog CONFIG REQUIRED)
+find_package(GTest CONFIG REQUIRED)
+find_package(SFML COMPONENTS system window graphics CONFIG REQUIRED)
 
-enable_testing()
-add_subdirectory(googletest)
+################################################################################
+# Sources
+################################################################################
+set(coregame_dir src/CoreGame/)
+set(engine_dir src/Engine/)
+set(utils_dir src/Utils/)
 
-add_subdirectory(src)
+file(GLOB_RECURSE common_sources ${engine_dir}*.cpp ${utils_dir}*.cpp ${coregame_dir}*.cpp)
+file(GLOB_RECURSE common_headers ${engine_dir}*.h ${utils_dir}*.h ${coregame_dir}*.h)
+file(GLOB_RECURSE src_sources src/*.cpp)
+file(GLOB_RECURSE src_headers src/*.h)
 
+set(sources ${src_sources} ${src_headers} ${common_sources} ${common_headers})
+
+################################################################################
+# Executable
+################################################################################
+add_executable(${PROJECT_NAME} ${sources})
+
+target_link_libraries(${PROJECT_NAME} PRIVATE 
+    glog::glog
+    GTest::gmock GTest::gtest GTest::gmock_main GTest::gtest_main
+    sfml-system sfml-graphics sfml-window
+)
+
+################################################################################
+# Resources
+################################################################################
+include (${CMAKE_SOURCE_DIR}/cmake/copy_res.cmake)
+################################################################################
+# - Blueprints
+################################################################################
+
+set(BLUEPRINTS_DIR Blueprints)
+# file(GLOB blueprints ${BLUEPRINTS_DIR}/*.*)
+CopyResources(${BLUEPRINTS_DIR}/*.*  $<TARGET_FILE_DIR:${PROJECT_NAME}>)
+
+################################################################################
+# - Fonts
+################################################################################
+set(FONT_DIR Font)
+# file(GLOB fonts ${FONT_DIR}/*.*)
+CopyResources(${FONT_DIR}/*.* $<TARGET_FILE_DIR:${PROJECT_NAME}>)
+
+################################################################################
+# SubProjects
+################################################################################
 add_subdirectory(SolitaireTest)

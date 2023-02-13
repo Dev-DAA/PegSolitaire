@@ -1,34 +1,22 @@
 cmake_minimum_required(VERSION 3.10.2)
 
+################################################################################
+# Project
+################################################################################
 project(SolitaireTest)
 
-if (MSVC)
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
-endif()
+set(CMAKE_CXX_STANDARD 11)
 
-find_library(GTEST_LIB gtestd ${CMAKE_BINARY_DIR}/lib/Debug)
+################################################################################
+# External libraries
+################################################################################
+find_package(glog CONFIG REQUIRED)
+find_package(GTest CONFIG REQUIRED)
+find_package(SFML COMPONENTS system window graphics CONFIG REQUIRED)
 
-if(GTEST_LIB)
-    message("Gtest library found")
-else()
-    message("Gtest library not found")
-    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-endif()
-
-message("CMAKE_BINARY_DIR = " ${CMAKE_BINARY_DIR})
-include_directories("${CMAKE_BINARY_DIR}/googletest")
-
-if (CMAKE_VERSION VERSION_LESS 2.8.11)
-
-    include_directories("${gtest_SOURCE_DIR}/include"
-                        "${gmock_SOURCE_DIR}/include")
-
-    message(gtest_SOURCE_DIR ${gtest_SOURCE_DIR})
-    message(gmock_SOURCE_DIR ${gmock_SOURCE_DIR})  
-
-endif()
-
+################################################################################
+# Sources
+################################################################################
 set(engine_dir_test ../src/Engine/)
 set(utils_dir_test ../src/Utils/)
 
@@ -45,20 +33,18 @@ set(sources_test
     ${common_headers_test}
 )
 
-find_package(
-            SFML 2.5
-            COMPONENTS system window graphics
-            REQUIRED)
-
-
-find_library(GLOG_LIB glogd ${CMAKE_BINARY_DIR}/glog/Debug)
-if(GLOG_LIB)
-    message ("GLOG_TEST FOUND!!!")
-else()
-    message ("GLOG_TEST NOT FOUND!!!")
-endif()
-
+################################################################################
+# Executable
+################################################################################
 add_executable(testmain ${sources_test})
-target_link_libraries(testmain gtest gmock_main gtest_main glog sfml-system sfml-window
-        sfml-graphics)
+target_link_libraries(testmain PRIVATE 
+    glog::glog
+    GTest::gmock GTest::gtest GTest::gmock_main GTest::gtest_main
+    sfml-system sfml-graphics sfml-window
+)
+
+################################################################################
+# Tests
+################################################################################
+enable_testing()
 add_test(NAME testmain COMMAND testmain)

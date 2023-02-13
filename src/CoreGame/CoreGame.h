@@ -7,9 +7,9 @@
 #include "../Engine/IGame.h"
 #include "../Engine/Math.h"
 #include "../Engine/Player.h"
-#include "../Utils/Singletone.h"
-#include "../Engine/Widget.h"
 #include "../Engine/SubEventWidget.h"
+#include "../Engine/Widget.h"
+#include "../Utils/Singletone.h"
 
 #include <SFML/Graphics.hpp>
 #include <algorithm>
@@ -69,4 +69,9 @@ private:
   sf::Transform m_activeTr;
 
   sf::FloatRect m_RectCellMouse;
+
+  sf::Text m_wasClickText;
+
+public:
+  static bool m_wasClick;
 };

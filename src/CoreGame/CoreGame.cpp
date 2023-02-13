@@ -66,13 +66,31 @@ CoreGame::CoreGame(/* args */)
 
   m_TextScore.setFont(m_font);
   m_TextGameOver.setFont(m_font);
+  m_wasClickText.setFont(m_font);
 
   m_TextGameOver.setString("Game Over!");
   m_TextGameOver.setCharacterSize(SIZE_FONT * 2);
   m_TextGameOver.setColor(sf::Color::Black);
+
+  m_wasClickText.setString("Was ckick!");
+  m_wasClickText.setCharacterSize(SIZE_FONT);
+  m_wasClickText.setColor(sf::Color::Black);
+  m_wasClickText.setPosition(650.0, 200.0);
 }
 
+bool CoreGame::m_wasClick = false;
+
 CoreGame::~CoreGame() {}
+
+void
+CallbackFuncSmth(bool wasClick)
+{
+  if (wasClick) {
+    Singleton<sf::Clock>::GetInstance().restart();
+    CoreGame::m_wasClick = true;
+    std::cout << "Pressed widget" << std::endl;
+  }
+}
 
 void
 CoreGame::StartGame()
@@ -102,10 +120,14 @@ CoreGame::StartGame()
 #pragma region "ТЕСТОВЫЙ КОД ДЛЯ ВИДЖЕТА"
   Widget widget;
   Widget widget1;
-  widget.setPosition(sf::Vector2f(250.0f, 250.0f));
-  widget.setSize(sf::Vector2f(200.0f, 200.0f));
-  widget1.setPosition(sf::Vector2f(250.0f, 600.0f));
-  widget1.setSize(sf::Vector2f(200.0f, 50.0f));
+  widget.SetPosition(sf::Vector2f(250.0f, 250.0f));
+  widget.SetSize(sf::Vector2f(200.0f, 200.0f));
+  widget.SetText("Hello");
+  widget.SetCallbackFunc(CallbackFuncSmth);
+  widget1.SetPosition(sf::Vector2f(250.0f, 600.0f));
+  widget1.SetSize(sf::Vector2f(200.0f, 50.0f));
+  widget1.SetText("Game");
+  widget1.SetCallbackFunc(CallbackFuncSmth);
 #pragma endregion
 
   uint32_t SizeCell = m_cellSize - 2;
@@ -208,6 +230,11 @@ CoreGame::StartGame()
       auto offset_center_y = size_pix_symb / 2;
       m_TextGameOver.setPosition(act_size_w - offset_center_x, act_size_h - offset_center_y);
       m_window.draw(m_TextGameOver, m_activeTr);
+    }
+
+    sf::Time time = Singleton<sf::Clock>::GetInstance().getElapsedTime();
+    if ((time.asMilliseconds() < 350) && (m_wasClick)) {
+      m_window.draw(m_wasClickText);
     }
 
 #pragma endregion

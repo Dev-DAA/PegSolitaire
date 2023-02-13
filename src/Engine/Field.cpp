@@ -3,8 +3,7 @@
 Field::Field()
   : m_width(7)
   , m_height(7)
-{
-}
+{}
 
 Field::~Field() {}
 

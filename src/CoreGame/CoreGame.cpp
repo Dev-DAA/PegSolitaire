@@ -66,13 +66,31 @@ CoreGame::CoreGame(/* args */)
 
   m_TextScore.setFont(m_font);
   m_TextGameOver.setFont(m_font);
+  m_wasClickText.setFont(m_font);
 
   m_TextGameOver.setString("Game Over!");
   m_TextGameOver.setCharacterSize(SIZE_FONT * 2);
   m_TextGameOver.setColor(sf::Color::Black);
+
+  m_wasClickText.setString("Was ckick!");
+  m_wasClickText.setCharacterSize(SIZE_FONT);
+  m_wasClickText.setColor(sf::Color::Black);
+  m_wasClickText.setPosition(650.0, 200.0);
 }
 
+bool CoreGame::m_wasClick = false;
+
 CoreGame::~CoreGame() {}
+
+void
+CallbackFuncSmth(bool wasClick)
+{
+  if (wasClick) {
+    Singleton<sf::Clock>::GetInstance().restart();
+    CoreGame::m_wasClick = true;
+    std::cout << "Pressed widget" << std::endl;
+  }
+}
 
 void
 CoreGame::StartGame()
@@ -99,6 +117,19 @@ CoreGame::StartGame()
   centerPnt[3].color = sf::Color::Magenta;
 #pragma endregion
 
+#pragma region "ТЕСТОВЫЙ КОД ДЛЯ ВИДЖЕТА"
+  Widget widget;
+  Widget widget1;
+  widget.SetPosition(sf::Vector2f(250.0f, 250.0f));
+  widget.SetSize(sf::Vector2f(200.0f, 200.0f));
+  widget.SetText("Hello");
+  widget.SetCallbackFunc(CallbackFuncSmth);
+  widget1.SetPosition(sf::Vector2f(250.0f, 600.0f));
+  widget1.SetSize(sf::Vector2f(200.0f, 50.0f));
+  widget1.SetText("Game");
+  widget1.SetCallbackFunc(CallbackFuncSmth);
+#pragma endregion
+
   uint32_t SizeCell = m_cellSize - 2;
   // Параметры для плавного изменения альфы
   uint8_t alpha = 0;
@@ -106,6 +137,7 @@ CoreGame::StartGame()
 
   // Время для анимации ячейки
   sf::Clock clock;
+
   while (m_window.isOpen()) {
     m_window.clear(sf::Color(0, 187, 255, 255));
 
@@ -146,6 +178,8 @@ CoreGame::StartGame()
 #pragma region "Отрисовка всех элементов"
     // Получаем экранные координаты
     sf::Vector2i pixelPos = sf::Mouse::getPosition(m_window);
+    SubEventWidget& subEventWidget = Singleton<SubEventWidget>::GetInstance();
+    subEventWidget.UpdatePositionMouse(sf::Vector2f(pixelPos));
     // Трансформируем координаты в активную область
     sf::Vector2f activePos = m_activeTr.getInverse().transformPoint(pixelPos.x, pixelPos.y);
     fieldGui.SetPositionMouse(activePos);
@@ -170,6 +204,9 @@ CoreGame::StartGame()
     m_window.draw(activeRectShape, m_activeTr);
     // TODO Отрисовываем центр экрана для разработки
     m_window.draw(centerPnt);
+    // TODO Тестовый виджет;
+    m_window.draw(widget);
+    m_window.draw(widget1);
 
 #pragma region "Тестовый код для шрифтов"
 
@@ -195,6 +232,11 @@ CoreGame::StartGame()
       m_window.draw(m_TextGameOver, m_activeTr);
     }
 
+    sf::Time time = Singleton<sf::Clock>::GetInstance().getElapsedTime();
+    if ((time.asMilliseconds() < 350) && (m_wasClick)) {
+      m_window.draw(m_wasClickText);
+    }
+
 #pragma endregion
 
     m_window.display();
@@ -213,6 +255,7 @@ CoreGame::StartGame()
             m_window.close();
           break;
         case sf::Event::MouseButtonPressed:
+          subEventWidget.UpdateEvent(event);
           if (event.key.code == sf::Mouse::Left) {
             // Переводим координаты выбранной ячейки в координаты поля и получаем тип выбранной
             // ячейки
@@ -259,6 +302,8 @@ CoreGame::StartGame()
               }
             }
           }
+        case sf::Event::MouseButtonReleased:
+          subEventWidget.UpdateEvent(event);
         default:
           break;
       }

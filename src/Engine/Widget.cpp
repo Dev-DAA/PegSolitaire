@@ -51,7 +51,7 @@ Widget::UpdatePositionMouse(sf::Vector2f pos)
 }
 
 void
-Widget::SetCallbackFunc(void (func)(bool wasClick))
+Widget::SetCallbackFunc(void(func)(bool wasClick))
 {
   // Устанавливаем указатель на callback функцию
   callbackFunc = func;
